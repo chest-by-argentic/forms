@@ -1,0 +1,12 @@
+{
+  "name": "forms",
+  "permissions": [
+    "record",
+    "requests",
+    "public-requests"
+  ],
+  "build": {
+    "runtime": "node",
+    "entry": "dist/apps/forms/src/worker.js"
+  }
+}
