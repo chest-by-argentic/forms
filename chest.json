@@ -1,5 +1,9 @@
 {
   "name": "forms",
+  "title": "Formulaires",
+  "description": "Créez vos formulaires et consultez les réponses de votre équipe.",
+  "icon": "chest/icon.svg",
+  "preview": "chest/preview.png",
   "permissions": [
     "record",
     "requests",
