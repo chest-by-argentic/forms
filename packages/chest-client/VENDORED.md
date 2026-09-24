@@ -1,0 +1,1 @@
+Copie vendue du SDK chest-by-argentic/Chest-SDK, commit 6c5208c688b533ccb775e6044c48b1a623a17144, le 2026-09-24 ; ne pas modifier ici : recopier `client/src` et `client/test` depuis le SDK et mettre ce commit à jour
