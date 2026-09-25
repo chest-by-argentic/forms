@@ -23,6 +23,8 @@ Pour l’adapter : forkez ce dépôt, modifiez-le avec votre agent, liez votre f
 **Rôles** (`roles` du manifeste) : `editeur` crée, modifie, publie, ferme et
 supprime un brouillon ; `lecteur` lit les formulaires et leurs réponses. Le
 propriétaire, les admins et le Builder entrent avec le premier, `editeur`.
+Le Chest les montre « Éditeur » et « Lecteur » (`role_labels`, présentation
+seulement) ; l’outil reçoit toujours l’identifiant.
 Un membre sans accès à l’outil n’atteint jamais `/chest` : le Chest répond
 « Accès retiré » avant l’outil ; une requête sans assertion `Chest-Member`
 valide reçoit aussi 401 de l’outil lui-même (`proxy.ts`), et chaque page et
