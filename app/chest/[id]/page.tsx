@@ -29,7 +29,7 @@ export default async function FormPage({ params, searchParams }: { params: Promi
         <dt>État</dt>
         <dd>{statusLabels[form.status]}{form.status === "draft" ? " — invisible hors du Chest" : form.status === "closed" ? " — la collecte est arrêtée, les réponses restent" : ""}</dd>
         <dt>Adresse publique</dt>
-        <dd>{form.status === "draft" ? "Donnée à la publication." : <a href={address} target="_blank" rel="noopener noreferrer">{address}</a>}</dd>
+        <dd>{form.status === "draft" ? <>{address} <span className="small">— ne mène à rien avant la publication</span></> : <a href={address} target="_blank" rel="noopener noreferrer">{address}</a>}</dd>
         <dt>Réponses</dt>
         <dd><a href={"/chest/" + form.id + "/reponses"}>{count(form.responses)}</a></dd>
         <dt>Modifié le</dt>
