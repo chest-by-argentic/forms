@@ -1,16 +1,20 @@
 {
+  "version": 2,
   "name": "forms",
   "title": "Formulaires",
-  "description": "Créez vos formulaires et consultez les réponses de votre équipe.",
+  "description": "Créez vos formulaires, publiez-les sur Internet et retrouvez les réponses avec votre équipe.",
   "icon": "chest/icon.svg",
   "preview": "chest/preview.png",
-  "permissions": [
-    "record",
-    "requests",
-    "public-requests"
-  ],
+  "roles": ["editeur", "lecteur"],
+  "public": true,
+  "csp": "tool",
+  "capabilities": ["database"],
   "build": {
     "runtime": "node",
-    "entry": "dist/apps/forms/src/worker.js"
+    "install": "npm ci",
+    "command": "npm run build",
+    "start": "npm start",
+    "port": 3000,
+    "static": ["/_next/static/"]
   }
 }
