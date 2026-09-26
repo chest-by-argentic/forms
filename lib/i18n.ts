@@ -42,7 +42,7 @@ const en = {
   statuses: { draft: "Draft", published: "Published", closed: "Closed" } satisfies Record<Status, string>,
   count: (n: number): string => (n === 0 ? "No responses" : n === 1 ? "1 response" : `${n} responses`),
   members: {
-    roles: { editeur: "editor", lecteur: "reader" } as Record<string, string>,
+    roles: { editor: "editor", reader: "reader" } as Record<string, string>,
     noRole: "no role",
     readOnly: "read only",
     limitedTitle: "Limited access",
@@ -135,7 +135,7 @@ const fr: Messages = {
   statuses: { draft: "Brouillon", published: "Publié", closed: "Fermé" },
   count: n => (n === 0 ? "Aucune réponse" : n === 1 ? "1 réponse" : `${n} réponses`),
   members: {
-    roles: { editeur: "éditeur", lecteur: "lecteur" },
+    roles: { editor: "éditeur", reader: "lecteur" },
     noRole: "sans rôle",
     readOnly: "lecture seule",
     limitedTitle: "Accès limité",
