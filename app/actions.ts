@@ -2,24 +2,19 @@
 
 import { redirect } from "next/navigation";
 import { FormsError, idPattern, limits, posted } from "../lib/model.ts";
+import type { AnswerError } from "../lib/model.ts";
 import { currentMember, forms } from "../lib/session.ts";
 
 // The actions of the pages. Each is an endpoint any request can call, on
 // either host: each decides for itself, from the member the Chest asserts
-// (none on the public host), never from what the page sends.
+// (none on the public host), never from what the page sends. They answer
+// codes; the pages put them in the words of the visitor's language
+// (lib/i18n.ts).
 
-export type EditorState = { error: string | null };
+export type EditorState = { error: FormsError["code"] | null };
 
-const messages: Record<FormsError["code"], string> = {
-  forbidden: "Votre rôle ne permet pas de modifier les formulaires.",
-  invalid: "Vérifiez le formulaire : un titre, de 1 à 50 champs, chacun avec un libellé de 200 caractères au plus.",
-  not_found: "Ce formulaire n’existe plus.",
-  conflict: "Ce formulaire n’est plus un brouillon : il ne se modifie plus.",
-  full: "Ce formulaire a reçu toutes les réponses qu’il peut garder.",
-};
-
-function message(error: unknown): string {
-  if (error instanceof FormsError) return messages[error.code];
+function code(error: unknown): FormsError["code"] {
+  if (error instanceof FormsError) return error.code;
   throw error;
 }
 
@@ -30,7 +25,7 @@ export async function createForm(_: EditorState, data: FormData): Promise<Editor
     if (!actor) throw new FormsError("forbidden");
     id = await forms.create(actor, posted(data.get("definition")));
   } catch (error) {
-    return { error: message(error) };
+    return { error: code(error) };
   }
   redirect("/chest/" + id);
 }
@@ -39,7 +34,7 @@ export async function updateForm(id: string, _: EditorState, data: FormData): Pr
   try {
     await forms.update(await currentMember(), id, posted(data.get("definition")));
   } catch (error) {
-    return { error: message(error) };
+    return { error: code(error) };
   }
   redirect(pageOf(id));
 }
@@ -52,7 +47,7 @@ async function change(step: () => Promise<void>, back: string): Promise<never> {
     await step();
   } catch (error) {
     if (!(error instanceof FormsError)) throw error;
-    redirect(back + "?refus=" + error.code);
+    redirect(back + "?refused=" + error.code);
   }
   redirect(back);
 }
@@ -73,7 +68,7 @@ export async function removeForm(id: string): Promise<void> {
 }
 
 // values give back what the visitor wrote, for them to correct it.
-export type AnswerState = { errors: Record<string, string>; values: Record<string, string>; closed: boolean; failed: string | null };
+export type AnswerState = { errors: Record<string, AnswerError>; values: Record<string, string>; closed: boolean; failed: "full" | "not_found" | null };
 
 // written is what the visitor wrote in the fields of a form (f1 to f50),
 // bounded, to fill them again.
@@ -93,11 +88,11 @@ export async function answerForm(slug: string, _: AnswerState, data: FormData): 
   try {
     outcome = await forms.answer(slug, id => data.get(id));
   } catch (error) {
-    if (error instanceof FormsError && error.code === "full") return { errors: {}, values: {}, closed: false, failed: messages.full };
-    if (error instanceof FormsError && error.code === "not_found") return { errors: {}, values: {}, closed: false, failed: "Ce formulaire n’existe pas." };
+    if (error instanceof FormsError && error.code === "full") return { errors: {}, values: {}, closed: false, failed: "full" };
+    if (error instanceof FormsError && error.code === "not_found") return { errors: {}, values: {}, closed: false, failed: "not_found" };
     throw error;
   }
-  if (outcome.ok) redirect("/f/" + slug + "/merci");
+  if (outcome.ok) redirect("/f/" + slug + "/thanks");
   if ("closed" in outcome) return { errors: {}, values: {}, closed: true, failed: null };
   return { errors: outcome.errors, values: written(data), closed: false, failed: null };
 }

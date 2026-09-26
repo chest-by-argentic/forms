@@ -2,6 +2,8 @@ import { headers } from "next/headers";
 import { member } from "../packages/chest-client/src/member.ts";
 import type { Member } from "../packages/chest-client/src/member.ts";
 import { Forms } from "./forms.ts";
+import { localeOf, messagesFor } from "./i18n.ts";
+import type { Messages } from "./i18n.ts";
 import { PostgresStore } from "./store.ts";
 
 // The service as the pages and actions of this server use it.
@@ -12,6 +14,12 @@ export const forms = new Forms(new PostgresStore());
 // for anything that did not come through the Chest's front.
 export async function currentMember(): Promise<Member | null> {
   return member(new Request("http://tool/", { headers: await headers() }));
+}
+
+// words are the interface's words in the language the request's browser
+// prefers, among those the tool speaks (lib/i18n.ts).
+export async function words(): Promise<Messages> {
+  return messagesFor(localeOf((await headers()).get("accept-language")));
 }
 
 // The public address of a form, as a member sees it on the team host

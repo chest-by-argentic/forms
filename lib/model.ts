@@ -92,25 +92,28 @@ export function storedFields(input: unknown): Field[] {
 // A deliberately plain check: something@something.something, no spaces.
 const email = /^[^\s@]+@[^\s@]+\.[^\s@]+$/u;
 
-export type Checked = { ok: true; answers: Answers } | { ok: false; errors: Record<string, string> };
+// What is wrong with an answer, as a code the interface puts in words.
+export type AnswerError = "unreadable" | "too_long" | "characters" | "required" | "email";
+
+export type Checked = { ok: true; answers: Answers } | { ok: false; errors: Record<string, AnswerError> };
 
 // answers reads what a visitor sends for each field of the form, by the
 // field's name, and nothing else: an answer is text of 5000 characters at
 // most, present when required, an address for an email field.
 export function answers(read: (id: string) => unknown, fields: readonly Field[]): Checked {
   const result: Answers = {};
-  const errors: Record<string, string> = {};
+  const errors: Record<string, AnswerError> = {};
   for (const field of fields) {
     const raw = read(field.id);
     if (raw !== null && raw !== undefined && typeof raw !== "string") {
-      errors[field.id] = "Réponse illisible.";
+      errors[field.id] = "unreadable";
       continue;
     }
     const value = (raw ?? "").trim();
-    if (value.length > limits.answer) errors[field.id] = `${limits.answer} caractères au plus.`;
-    else if ((field.kind === "long" ? controls : lineControls).test(value)) errors[field.id] = "Caractères non admis.";
-    else if (field.required && value === "") errors[field.id] = "Réponse requise.";
-    else if (field.kind === "email" && value !== "" && !email.test(value)) errors[field.id] = "Adresse e-mail invalide.";
+    if (value.length > limits.answer) errors[field.id] = "too_long";
+    else if ((field.kind === "long" ? controls : lineControls).test(value)) errors[field.id] = "characters";
+    else if (field.required && value === "") errors[field.id] = "required";
+    else if (field.kind === "email" && value !== "" && !email.test(value)) errors[field.id] = "email";
     else result[field.id] = value;
   }
   return Object.keys(errors).length > 0 ? { ok: false, errors } : { ok: true, answers: result };
@@ -140,14 +143,14 @@ export function slugOf(random: Uint8Array): string {
 
 export const idPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/u;
 
-// csv renders responses as RFC 4180 text, a header of labels then a line
-// per response; a cell a spreadsheet would read as a formula is quoted as
-// text.
-export function csv(fields: readonly Field[], responses: readonly Response[]): string {
+// csv renders responses as RFC 4180 text, a header (`received` names the
+// column of dates, then the labels) then a line per response; a cell a
+// spreadsheet would read as a formula is quoted as text.
+export function csv(fields: readonly Field[], responses: readonly Response[], received: string): string {
   const cell = (value: string): string => {
     const safe = /^[=+\-@\t\r]/u.test(value) ? "'" + value : value;
     return /[",\r\n]/u.test(safe) ? '"' + safe.replaceAll('"', '""') + '"' : safe;
   };
-  const rows = [["Reçue le", ...fields.map(f => f.label)], ...responses.map(r => [r.at, ...fields.map(f => r.answers[f.id] ?? "")])];
+  const rows = [[received, ...fields.map(f => f.label)], ...responses.map(r => [r.at, ...fields.map(f => r.answers[f.id] ?? "")])];
   return rows.map(row => row.map(cell).join(",")).join("\r\n") + "\r\n";
 }

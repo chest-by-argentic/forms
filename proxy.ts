@@ -1,6 +1,7 @@
 import { randomBytes } from "node:crypto";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { localeOf, messagesFor } from "./lib/i18n.ts";
 import { member } from "./packages/chest-client/src/member.ts";
 
 // Every page this server renders carries its own Content-Security-Policy:
@@ -36,7 +37,7 @@ function membersPart(pathname: string): boolean {
 
 export function proxy(request: NextRequest): NextResponse {
   if (membersPart(request.nextUrl.pathname) && member(request) === null) {
-    return new NextResponse("Connexion requise.", { status: 401, headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store", "Content-Security-Policy": "default-src 'none'; frame-ancestors 'none'" } });
+    return new NextResponse(messagesFor(localeOf(request.headers.get("accept-language"))).http.signIn, { status: 401, headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store", "Content-Security-Policy": "default-src 'none'; frame-ancestors 'none'" } });
   }
   const nonce = randomBytes(16).toString("base64");
   const value = policy(nonce);

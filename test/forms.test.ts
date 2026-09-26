@@ -6,7 +6,7 @@ import { MemoryStore } from "./memory-store.ts";
 
 const editor = { id: "alice", role: "editeur" };
 const reader = { id: "bob", role: "lecteur" };
-const draft = { title: "Inscription", description: "", fields: [{ label: "Nom", kind: "text", required: true }, { label: "Courriel", kind: "email", required: false }] };
+const draft = { title: "Sign-up", description: "", fields: [{ label: "Name", kind: "text", required: true }, { label: "Email", kind: "email", required: false }] };
 const refused = (code: FormsError["code"]) => (e: unknown) => e instanceof FormsError && e.code === code;
 const fresh = () => {
   const store = new MemoryStore();
@@ -27,7 +27,7 @@ test("editors make forms, readers read them, anybody else nothing", async () => 
   await assert.rejects(forms.list(null), refused("forbidden"));
   await assert.rejects(forms.get({ role: "admin" }, id), refused("forbidden"));
   assert.equal((await forms.list(reader)).length, 1);
-  assert.equal((await forms.get(reader, id)).title, "Inscription");
+  assert.equal((await forms.get(reader, id)).title, "Sign-up");
   await assert.rejects(forms.get(reader, "not-an-id"), refused("not_found"));
   await assert.rejects(forms.get(reader, "00000000-0000-0000-0000-000000000000"), refused("not_found"));
 });
@@ -38,8 +38,8 @@ test("a draft is edited, published explicitly, then closed; it never goes back",
   const created = await forms.get(editor, id);
   assert.equal(created.status, "draft");
   assert.match(created.slug, /^[a-km-np-z2-9]{10}$/u);
-  await forms.update(editor, id, { ...draft, title: "Inscription à l’atelier" });
-  assert.equal((await forms.get(editor, id)).title, "Inscription à l’atelier");
+  await forms.update(editor, id, { ...draft, title: "Workshop sign-up" });
+  assert.equal((await forms.get(editor, id)).title, "Workshop sign-up");
   await assert.rejects(forms.update(editor, id, { ...draft, fields: [] }), refused("invalid"));
   await assert.rejects(forms.close(editor, id), refused("conflict"));
   await forms.publish(editor, id);
@@ -76,7 +76,7 @@ test("an anonymous answer is checked, kept, and stays when the form closes", asy
   const id = await forms.create(editor, draft);
   const { slug } = await forms.get(editor, id);
   await forms.publish(editor, id);
-  assert.deepEqual(await forms.answer(slug, () => null), { ok: false, errors: { f1: "Réponse requise." } });
+  assert.deepEqual(await forms.answer(slug, () => null), { ok: false, errors: { f1: "required" } });
   const sent: Record<string, string> = { f1: "Claire", f2: "claire@example.test" };
   assert.equal((await forms.answer(slug, name => sent[name])).ok, true);
   await forms.close(editor, id);
