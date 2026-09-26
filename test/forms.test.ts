@@ -4,8 +4,8 @@ import { canEdit, canRead, Forms } from "../lib/forms.ts";
 import { FormsError, limits } from "../lib/model.ts";
 import { MemoryStore } from "./memory-store.ts";
 
-const editor = { id: "alice", role: "editeur" };
-const reader = { id: "bob", role: "lecteur" };
+const editor = { id: "alice", role: "editor" };
+const reader = { id: "bob", role: "reader" };
 const draft = { title: "Sign-up", description: "", fields: [{ label: "Name", kind: "text", required: true }, { label: "Email", kind: "email", required: false }] };
 const refused = (code: FormsError["code"]) => (e: unknown) => e instanceof FormsError && e.code === code;
 const fresh = () => {
@@ -17,7 +17,7 @@ const fresh = () => {
 test("editors make forms, readers read them, anybody else nothing", async () => {
   const { forms } = fresh();
   assert.ok(canEdit(editor) && canRead(editor) && canRead(reader) && !canEdit(reader));
-  for (const nobody of [null, {}, { role: "" }, { role: "admin" }, { role: "Editeur" }]) assert.ok(!canRead(nobody) && !canEdit(nobody));
+  for (const nobody of [null, {}, { role: "" }, { role: "admin" }, { role: "Editor" }, { role: "editeur" }, { role: "lecteur" }]) assert.ok(!canRead(nobody) && !canEdit(nobody));
   await assert.rejects(forms.create(reader, draft), refused("forbidden"));
   await assert.rejects(forms.create({ id: "x" }, draft), refused("forbidden"));
   const id = await forms.create(editor, draft);

@@ -19,10 +19,10 @@ To adapt it: fork this repository, change it with your agent (see
   without an account, then a thank-you page; a closed form says so and keeps
   its responses; a draft or an unknown address is nothing (404).
 
-**Roles** (`roles` in the manifest): `editeur` (editor) creates, edits,
-publishes, closes and deletes a draft; `lecteur` (reader) reads the forms and
+**Roles** (`roles` in the manifest): `editor` ("Editor") creates, edits,
+publishes, closes and deletes a draft; `reader` ("Reader") reads the forms and
 their responses. The owner, the admins and the Builder come in with the first
-one, `editeur`. `role_labels` only changes how the Chest shows them; the tool
+one, `editor`. `role_labels` only changes how the Chest shows them; the tool
 always receives the identifier. A member without access to the tool never
 reaches `/chest`: the Chest refuses them before the tool; a request without a
 valid `Chest-Member` assertion also gets 401 from the tool itself

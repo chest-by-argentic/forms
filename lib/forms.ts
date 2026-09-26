@@ -20,13 +20,13 @@ export interface Store {
 }
 
 // Who asks, as the Chest asserts it (member() of the SDK): only the role
-// matters here. Editors (editeur) make, publish and close forms; readers
-// (lecteur) read them and their responses. Any other role, or none, is
+// matters here. Editors (editor) make, publish and close forms; readers
+// (reader) read them and their responses. Any other role, or none, is
 // nothing: the Chest decides who reaches the tool, the tool what each role
 // may do in it.
 export type Actor = { role?: string } | null;
-export const canEdit = (actor: Actor): boolean => actor?.role === "editeur";
-export const canRead = (actor: Actor): boolean => canEdit(actor) || actor?.role === "lecteur";
+export const canEdit = (actor: Actor): boolean => actor?.role === "editor";
+export const canRead = (actor: Actor): boolean => canEdit(actor) || actor?.role === "reader";
 
 export class Forms {
   readonly #store: Store;
