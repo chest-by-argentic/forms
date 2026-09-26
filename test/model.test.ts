@@ -2,18 +2,18 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { answers, csv, definition, FormsError, limits, posted, slugOf, slugPattern, storedAnswers, storedFields } from "../lib/model.ts";
 
-const field = (label = "Nom", kind = "text", required = true) => ({ label, kind, required });
-const form = (fields: unknown[] = [field()], title: unknown = "Inscription", description: unknown = "") => ({ title, description, fields });
+const field = (label = "Name", kind = "text", required = true) => ({ label, kind, required });
+const form = (fields: unknown[] = [field()], title: unknown = "Sign-up", description: unknown = "") => ({ title, description, fields });
 const invalid = (run: () => unknown) => assert.throws(run, (e: unknown) => e instanceof FormsError && e.code === "invalid");
 
 test("a definition is a title, a description and 1 to 50 fields named by their place", () => {
-  const read = definition(form([field("  Nom  "), field("Courriel", "email", false), field("Message", "long", false)], " Titre ", " Texte\nsur deux lignes "));
+  const read = definition(form([field("  Name  "), field("Email", "email", false), field("Message", "long", false)], " Title ", " Text\non two lines "));
   assert.deepEqual(read, {
-    title: "Titre",
-    description: "Texte\nsur deux lignes",
+    title: "Title",
+    description: "Text\non two lines",
     fields: [
-      { id: "f1", label: "Nom", kind: "text", required: true },
-      { id: "f2", label: "Courriel", kind: "email", required: false },
+      { id: "f1", label: "Name", kind: "text", required: true },
+      { id: "f2", label: "Email", kind: "email", required: false },
       { id: "f3", label: "Message", kind: "long", required: false },
     ],
   });
@@ -25,13 +25,13 @@ test("a definition out of its bounds or its shape is refused", () => {
   invalid(() => definition(form(Array.from({ length: limits.fields + 1 }, () => field()))));
   invalid(() => definition(form([field("x".repeat(limits.label + 1))])));
   invalid(() => definition(form([field("   ")])));
-  invalid(() => definition(form([field("Nom\u0007")])));
-  invalid(() => definition(form([field("Nom", "file")])));
+  invalid(() => definition(form([field("Name\u0007")])));
+  invalid(() => definition(form([field("Name", "file")])));
   invalid(() => definition(form([{ ...field(), required: "yes" }])));
   invalid(() => definition(form([{ ...field(), extra: 1 }])));
   invalid(() => definition(form([field()], "x".repeat(limits.title + 1))));
   invalid(() => definition(form([field()], "")));
-  invalid(() => definition(form([field()], "Titre", "x".repeat(limits.description + 1))));
+  invalid(() => definition(form([field()], "Title", "x".repeat(limits.description + 1))));
   invalid(() => definition({ ...form(), status: "published" }));
   invalid(() => definition(null));
   invalid(() => definition([form()]));
@@ -47,11 +47,11 @@ test("posted text is bounded before it is parsed", () => {
 });
 
 test("answers are read for each field, by its name, and checked", () => {
-  const fields = definition(form([field("Nom"), field("Courriel", "email", false), field("Message", "long", false)])).fields;
-  const sent: Record<string, unknown> = { f1: " Claire ", f2: "claire@example.test", f3: "ligne 1\nligne 2", f9: "ignored", constructor: "x" };
-  assert.deepEqual(answers(id => sent[id], fields), { ok: true, answers: { f1: "Claire", f2: "claire@example.test", f3: "ligne 1\nligne 2" } });
-  assert.deepEqual(answers(() => null, fields), { ok: false, errors: { f1: "Réponse requise." } });
-  const bad = answers(id => ({ f1: "x".repeat(limits.answer + 1), f2: "pas-une-adresse", f3: "\u0000" })[id], fields);
+  const fields = definition(form([field("Name"), field("Email", "email", false), field("Message", "long", false)])).fields;
+  const sent: Record<string, unknown> = { f1: " Claire ", f2: "claire@example.test", f3: "line 1\nline 2", f9: "ignored", constructor: "x" };
+  assert.deepEqual(answers(id => sent[id], fields), { ok: true, answers: { f1: "Claire", f2: "claire@example.test", f3: "line 1\nline 2" } });
+  assert.deepEqual(answers(() => null, fields), { ok: false, errors: { f1: "required" } });
+  const bad = answers(id => ({ f1: "x".repeat(limits.answer + 1), f2: "not-an-address", f3: "\u0000" })[id], fields);
   assert.equal(bad.ok, false);
   assert.deepEqual(Object.keys(bad.ok ? {} : bad.errors).sort(), ["f1", "f2", "f3"]);
   // A file, or a line break in a one-line answer, is no answer.
@@ -61,7 +61,7 @@ test("answers are read for each field, by its name, and checked", () => {
 });
 
 test("what storage holds is read back as strictly", () => {
-  const fields = definition(form([field("Nom"), field("Courriel", "email", false)])).fields;
+  const fields = definition(form([field("Name"), field("Email", "email", false)])).fields;
   assert.deepEqual(storedFields(structuredClone(fields)), fields);
   invalid(() => storedFields([{ ...fields[0], id: "f2" }]));
   invalid(() => storedFields([{ ...fields[0], kind: "script" }]));
@@ -78,7 +78,7 @@ test("a slug is ten characters of an alphabet without look-alikes", () => {
 });
 
 test("the CSV quotes what must be and never lets a cell be a formula", () => {
-  const fields = definition(form([field("Nom, prénom"), field("Note", "long", false)])).fields;
-  const text = csv(fields, [{ id: "r", at: "2026-09-25T10:00:00.000Z", answers: { f1: "=HYPERLINK(\"x\")", f2: "a\nb" } }]);
-  assert.equal(text, 'Reçue le,"Nom, prénom",Note\r\n2026-09-25T10:00:00.000Z,"\'=HYPERLINK(""x"")","a\nb"\r\n');
+  const fields = definition(form([field("Name, first name"), field("Note", "long", false)])).fields;
+  const text = csv(fields, [{ id: "r", at: "2026-09-25T10:00:00.000Z", answers: { f1: "=HYPERLINK(\"x\")", f2: "a\nb" } }], "Received");
+  assert.equal(text, 'Received,"Name, first name",Note\r\n2026-09-25T10:00:00.000Z,"\'=HYPERLINK(""x"")","a\nb"\r\n');
 });

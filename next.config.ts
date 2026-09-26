@@ -1,6 +1,6 @@
 import type { NextConfig } from "next";
 
-// What a Chest needs of a Next.js server (README, « Sur un Chest »):
+// What a Chest needs of a Next.js server (README, "On a Chest"):
 // - the build fits the Chest's build container (512 MiB, 1 CPU): webpack
 //   (`next build --webpack`, whose heap Node bounds) rather than Turbopack,
 //   one worker, in the main process; the types are checked before, by
