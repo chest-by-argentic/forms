@@ -1,95 +1,98 @@
-# Formulaires — créez vos formulaires et retrouvez les réponses.
+# Forms — create forms and collect the responses
 
-Outil du catalogue Chest by Argentic. Un Chest le construit lui-même depuis ce
-dépôt, à un commit épinglé : c’est un serveur Next.js (contrat v2 : `chest.json`
-`"version": 2`), avec sa base PostgreSQL propre.
+A tool of the Chest by Argentic catalogue. A Chest builds it itself from this
+repository, at a pinned commit: it is a Next.js server (tool contract v2:
+`chest.json` `"version": 2`) with its own PostgreSQL database.
 
-Pour l’adapter : forkez ce dépôt, modifiez-le avec votre agent, liez votre fork
-à votre Chest.
+To adapt it: fork this repository, change it with your agent (see
+`AGENTS.md`), and link your fork to your Chest.
 
-## Ce que fait l’outil
+## What it does
 
-- **Partie membres** (`/chest`, sur l’hôte d’équipe `forms-chest.<chest>`) :
-  la liste des formulaires, l’éditeur d’un brouillon (titre, description,
-  1 à 50 champs : texte court, texte long ou adresse e-mail, requis ou non),
-  la publication explicite, la fermeture de la collecte, les réponses d’un
-  formulaire (les 200 dernières à l’écran, toutes en CSV).
-- **Partie publique** (`/f/<adresse>`, sur l’hôte public `forms.<chest>`,
-  une fois la partie publique ouverte dans le Chest, onglet « Public ») : un
-  formulaire publié se remplit sans compte, puis « Merci » ; un formulaire
-  fermé dit « Ce formulaire est fermé. » et garde ses réponses ; un brouillon
-  ou une adresse inconnue n’est rien (404).
+- **Members' part** (`/chest`, on the team host `forms-chest.<chest>`): the
+  list of forms, the editor of a draft (title, description, 1 to 50 fields:
+  short text, long text or email address, required or not), explicit
+  publishing, closing the collection, and the responses of a form (the latest
+  200 on screen, all of them as CSV).
+- **Public part** (`/f/<address>`, on the public host `forms.<chest>`, once
+  the public part is opened in the Chest): a published form is filled in
+  without an account, then a thank-you page; a closed form says so and keeps
+  its responses; a draft or an unknown address is nothing (404).
 
-**Rôles** (`roles` du manifeste) : `editeur` crée, modifie, publie, ferme et
-supprime un brouillon ; `lecteur` lit les formulaires et leurs réponses. Le
-propriétaire, les admins et le Builder entrent avec le premier, `editeur`.
-Le Chest les montre « Éditeur » et « Lecteur » (`role_labels`, présentation
-seulement) ; l’outil reçoit toujours l’identifiant.
-Un membre sans accès à l’outil n’atteint jamais `/chest` : le Chest répond
-« Accès retiré » avant l’outil ; une requête sans assertion `Chest-Member`
-valide reçoit aussi 401 de l’outil lui-même (`proxy.ts`), et chaque page et
-chaque action relit le rôle (`lib/forms.ts`).
+**Roles** (`roles` in the manifest): `editeur` (editor) creates, edits,
+publishes, closes and deletes a draft; `lecteur` (reader) reads the forms and
+their responses. The owner, the admins and the Builder come in with the first
+one, `editeur`. `role_labels` only changes how the Chest shows them; the tool
+always receives the identifier. A member without access to the tool never
+reaches `/chest`: the Chest refuses them before the tool; a request without a
+valid `Chest-Member` assertion also gets 401 from the tool itself
+(`proxy.ts`), and every page and every action reads the role again
+(`lib/forms.ts`).
 
-**Bornes**, vérifiées côté serveur (`lib/model.ts`) : titre 200 caractères,
-description 1000, 50 champs, libellé 200, réponse 5000, 10 000 réponses par
-formulaire. Toutes les requêtes SQL sont paramétrées (`lib/store.ts`), le
-schéma est `migrations/0001_forms.sql`, joué par le Chest avant la première
-version ; une réponse ne peut pas être supprimée (clé étrangère `RESTRICT`),
-seul un brouillon — qui n’en a pas — se supprime.
+**Bounds**, checked on the server (`lib/model.ts`): title 200 characters,
+description 1000, 50 fields, label 200, answer 5000, 10,000 responses per
+form. Every SQL query is parameterised (`lib/store.ts`); the schema is
+`migrations/0001_forms.sql`, run by the Chest before the first version. A
+response cannot be deleted (foreign key `RESTRICT`): only a draft — which has
+none — can be deleted.
 
-## Sur un Chest
+## Languages
 
-`chest.json` déclare ce que l’outil demande, montré à l’approbation :
+The interface speaks English by default and French to a browser that prefers
+it (`Accept-Language`). Every word of the interface is in `lib/i18n.ts`, one
+catalogue per language; the service and the model return codes, never
+sentences. To add a language, add its code to `locales` and a catalogue of the
+same shape (a test checks that every catalogue has every word).
 
-- `public: true` — « Partie publique » ;
-- `csp: "tool"` — « Politique de sécurité propre » : Next.js exécute des
-  scripts en ligne (l’hydratation), que la politique par défaut du Chest
-  interdit. `proxy.ts` envoie sur chaque page sa propre
-  `Content-Security-Policy` avec un nonce par réponse (`script-src 'self'
-  'nonce-…' 'strict-dynamic'`, `frame-ancestors 'none'`…) ; le Chest ajoute
-  alors seulement `frame-ancestors 'none'; base-uri 'self'; object-src
-  'none'` sur l’hôte public. Une page sans politique garde celle, stricte,
-  du Chest ;
-- `capabilities: ["database"]` — « Base de données » : le Chest donne
-  `DATABASE_URL`.
+## On a Chest
 
-Ce que le Chest impose à un serveur, et comment l’outil s’y tient :
+`chest.json` declares what the tool asks for, shown at approval:
 
-- **Système de fichiers en lecture seule** (et `/tmp` de 64 Mio) : toutes les
-  pages sont rendues à la demande (`dynamic = "force-dynamic"`), sans
-  optimiseur d’images (`images.unoptimized`) — rien n’est écrit dans
-  `.next/cache` à l’exécution ;
-- **construction à 512 Mio et 1 CPU** : `npm run build` vérifie les types
-  (`next typegen`, `tsc`) puis construit avec webpack (`next build --webpack`,
-  un seul processus, sans cache laissé dans l’image) plutôt qu’avec
-  Turbopack, dont la mémoire ne se borne pas ;
-- **serveur** : `next start -H 127.0.0.1` sur `PORT` (3000, que fixe le
-  Chest), télémétrie de Next.js coupée ;
-- `npm prune --omit=dev` après la construction : `next`, `react`,
-  `react-dom` et `postgres` sont des dépendances, TypeScript et les types ne
-  le sont pas.
+- `public: true` — a public part;
+- `csp: "tool"` — its own security policy: Next.js runs inline scripts
+  (hydration), which the Chest's default policy forbids. `proxy.ts` sends its
+  own `Content-Security-Policy` on every page, with a nonce per response
+  (`script-src 'self' 'nonce-…' 'strict-dynamic'`, `frame-ancestors 'none'`…);
+  the Chest then only adds `frame-ancestors 'none'; base-uri 'self';
+  object-src 'none'` on the public host. A page without a policy keeps the
+  Chest's strict one;
+- `capabilities: ["database"]` — a database: the Chest gives `DATABASE_URL`.
 
-`packages/chest-client` est une copie vendue du SDK
-(`chest-by-argentic/Chest-SDK`, voir son `VENDORED.md`) : `member(request)`
-lit l’assertion du Chest. Les imports relatifs portent l’extension `.ts`
-(`allowImportingTsExtensions`) : webpack et Turbopack ne résolvent pas
-`./x.js` vers `./x.ts`.
+What the Chest imposes on a server, and how the tool complies:
 
-## Développer
+- **Read-only file system** (and a 64 MiB `/tmp`): every page is rendered on
+  demand (`dynamic = "force-dynamic"`), without the image optimiser
+  (`images.unoptimized`) — nothing is written to `.next/cache` at run time;
+- **build in 512 MiB and 1 CPU**: `npm run build` checks the types
+  (`next typegen`, `tsc`) then builds with webpack (`next build --webpack`,
+  one process, no cache left in the image) rather than Turbopack, whose memory
+  cannot be bounded;
+- **server**: `next start -H 127.0.0.1` on `PORT` (3000, set by the Chest),
+  Next.js telemetry off;
+- `npm prune --omit=dev` after the build: `next`, `react`, `react-dom` and
+  `postgres` are dependencies, TypeScript and the types are not.
+
+`packages/chest-client` is a vendored copy of the SDK
+(`chest-by-argentic/Chest-SDK`, see its `VENDORED.md`): `member(request)`
+reads the Chest's assertion. Relative imports carry the `.ts` extension
+(`allowImportingTsExtensions`): webpack and Turbopack do not resolve `./x.js`
+to `./x.ts`.
+
+## Develop
 
 ```sh
 npm ci
-npm test           # modèle et service (node:test, stockage en mémoire)
-npm run build      # types puis construction, comme le Chest
+npm test           # model, service and catalogues (node:test, in-memory store)
+npm run build      # types, then the build, as the Chest does
 ```
 
-`npm run dev` sert l’outil sur `localhost:3000` ; la partie membres attend
-l’assertion signée du Chest (`CHEST_TOKEN`, `CHEST_TOOL`) et une base
+`npm run dev` serves the tool on `localhost:3000`; the members' part expects
+the Chest's signed assertion (`CHEST_TOKEN`, `CHEST_TOOL`) and a database
 (`DATABASE_URL`).
 
-## Depuis la version 1
+## Since version 1
 
-La version 1 était un worker (contrat v1 : un canal privé, un enregistrement
-de 1 Kio, un seul formulaire). Un Chest refuse de mettre à jour un outil
-d’un contrat vers l’autre : un Formulaires v1 installé se **retire puis se
-réinstalle** depuis le catalogue ; ses réponses v1 ne sont pas reprises.
+Version 1 was a worker (contract v1: a private channel, a 1 KiB record, a
+single form). A Chest refuses to update a tool from one contract to the
+other: an installed Forms v1 is **removed then reinstalled** from the
+catalogue; its v1 responses are not carried over.

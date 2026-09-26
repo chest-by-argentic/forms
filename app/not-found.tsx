@@ -1,8 +1,11 @@
-export default function NotFound() {
+import { words } from "../lib/session.ts";
+
+export default async function NotFound() {
+  const t = await words();
   return (
     <main className="page public">
-      <h1>Page introuvable</h1>
-      <p>Cette adresse ne mène à aucun formulaire.</p>
+      <h1>{t.notFound.title}</h1>
+      <p>{t.notFound.body}</p>
     </main>
   );
 }
