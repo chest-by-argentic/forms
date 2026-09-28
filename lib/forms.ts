@@ -24,7 +24,7 @@ export interface Store {
 // (reader) read them and their responses. Any other role, or none, is
 // nothing: the Chest decides who reaches the tool, the tool what each role
 // may do in it.
-export type Actor = { role?: string } | null;
+export type Actor = { role?: string | null } | null;
 export const canEdit = (actor: Actor): boolean => actor?.role === "editor";
 export const canRead = (actor: Actor): boolean => canEdit(actor) || actor?.role === "reader";
 
