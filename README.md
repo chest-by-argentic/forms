@@ -1,8 +1,8 @@
 # Forms — create forms and collect the responses
 
 A tool of the Chest by Argentic catalogue. A Chest builds it itself from this
-repository, at a pinned commit: it is a Next.js server (tool contract 0.4:
-`chest.json` `"chest": "0.4"`) with its own PostgreSQL database.
+repository, at a pinned commit: it is a Next.js server (tool contract 0.5:
+`chest.json` `"chest": "0.5"`) with its own PostgreSQL database.
 
 To adapt it: fork this repository, change it with your agent (see
 `AGENTS.md`), and link your fork to your Chest.
